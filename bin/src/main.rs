@@ -14,37 +14,19 @@ extern crate env_logger;
 
 mod attendees;
 mod errors;
+mod cache_loop;
 
 use actix::prelude::{System, Arbiter, Addr, Actor};
 use attendees::actor::AttendeesActor;
-use attendees::message::{GetAttendees, UpdateAttendees, UpdateAttendeesResponse};
+use attendees::message::{GetAttendees};
 use errors::WinnerError;
+use tokio::prelude::future;
+use tokio::prelude::future::Future;
 
 use actix_web::{App, HttpResponse, http::Method, FutureResponse, State, AsyncResponder, Query};
 use actix_web::{http, error};
-use tokio::prelude::future::Future;
-use tokio::prelude::Stream;
-use core::time;
 use actix_web::server::HttpServer;
-use tokio::prelude::future;
-use tokio::timer::Interval;
-use std::time::Instant;
 use std::env;
-
-fn cache_update_interval(duration: u64, addr: Addr<AttendeesActor>, token: String, organizer: String) -> impl Future<Item=(), Error=()> + 'static {
-    Interval::new(Instant::now(), time::Duration::from_secs(duration))
-        .then(move |_instant| addr.send(UpdateAttendees { token: token.clone(), organizer: organizer.clone() })
-            .map_err(|err| eprintln!("Error on sending update message : {}", err)))
-        .for_each(move |res| {
-            match res {
-                UpdateAttendeesResponse::Updated => info!("Attendees cache updated"),
-                UpdateAttendeesResponse::NoEventAvailable => info!("No event available on eventbrite"),
-                UpdateAttendeesResponse::EventbriteError {error :ref e} => info!("Error on eventbrite : {}", e),
-                UpdateAttendeesResponse::UnexpectedError {error: ref e} => error!("Unexpected error on update attendees \n{:?}", e)
-            };
-            Ok(())
-        })
-}
 
 struct WebState {
     attendees: Addr<AttendeesActor>
@@ -86,7 +68,7 @@ fn main() {
     let system = System::new("lottery");
 
     let addr = AttendeesActor::default().start();
-    Arbiter::spawn(cache_update_interval(10, addr.clone(), token.clone(), organizer.clone()));
+    Arbiter::spawn(cache_loop::cache_update_interval(10, addr.clone(), token.clone(), organizer.clone()));
 
     let addr_cloned = addr.clone();
     HttpServer::new(move ||
