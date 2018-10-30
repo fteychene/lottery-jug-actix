@@ -1,0 +1,16 @@
+[package]
+name = "lotter-jug-actix-bin"
+version = "0.1.0"
+authors = ["fteychene <francois.teychene@gmail.com>"]
+
+[dependencies]
+failure = "0.1.3"
+failure_derive = "0.1.2"
+actix = "0.7"
+actix-web = { version = "0.7", features = ["alpn"] }
+tokio = "0.1.11"
+serde = "1.0"
+serde_derive = "1.0"
+log = "0.4"
+env_logger = "0.5.13"
+jug_actix_lottery = { path = "../lottery" }

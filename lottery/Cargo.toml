@@ -1,0 +1,14 @@
+[package]
+name = "jug_actix_lottery"
+version = "0.1.0"
+authors = ["fteychene <francois.teychene@gmail.com>"]
+
+[dependencies]
+failure = "0.1.3"
+failure_derive = "0.1.2"
+serde = "1.0"
+serde_derive = "1.0"
+reqwest = "0.8.1"
+matches = "0.1.8"
+frunk = "0.2.1"
+rand = "0.5.5"
