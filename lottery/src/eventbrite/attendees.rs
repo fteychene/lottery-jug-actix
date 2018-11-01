@@ -11,9 +11,9 @@ use super::EVENTBRITE_BASE_URL;
 /// If all values of the vector are Ok then return a Ok containing all the values cloned
 /// On the first Err it stop accumulating values and return the matched error
 ///
-/// T should be a Clone type
-fn sequence<R>(seq: Vec<Result<R, Error>>) -> Result<Vec<R>, Error>
-    where R: Clone {
+/// T must be a Clone type
+fn sequence<T>(seq: Vec<Result<T, Error>>) -> Result<Vec<T>, Error>
+    where T: Clone {
     let result = seq.into_iter().fold(Ok(vec![]), |result, current|
         result.and_then(|mut vec|
             match current {

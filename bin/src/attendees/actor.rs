@@ -1,24 +1,25 @@
-use jug_actix_lottery::eventbrite::model::Profile;
+use jug_actix_lottery::eventbrite::model::{Event, Profile};
 use jug_actix_lottery::eventbrite::errors::EventbriteError;
 use jug_actix_lottery::eventbrite::attendees::load_attendees;
 use jug_actix_lottery::eventbrite::events::get_current_event;
 use jug_actix_lottery::lottery::draw;
 use actix::{Actor, Context, Message, Handler};
 use actix::dev::{MessageResponse, ResponseChannel};
-use super::message::{GetAttendees, UpdateAttendeesResponse, UpdateAttendees};
-use errors::WinnerError;
+use super::message::{GetAttendees, UpdateAttendeesResponse, UpdateAttendees, GetEvent};
+use errors::LotteryError;
 
-pub struct AttendeesActor {
-    attendees: Option<Vec<Profile>>
+pub struct LotteryCache {
+    attendees: Option<Vec<Profile>>,
+    event: Option<Event>,
 }
 
-impl Actor for AttendeesActor {
+impl Actor for LotteryCache {
     type Context = Context<Self>;
 }
 
-impl Default for AttendeesActor {
+impl Default for LotteryCache {
     fn default() -> Self {
-        AttendeesActor { attendees: None }
+        LotteryCache { attendees: None, event: None }
     }
 }
 
@@ -39,20 +40,22 @@ impl<A, M> MessageResponse<A, M> for UpdateAttendeesResponse
     }
 }
 
-impl Handler<UpdateAttendees> for AttendeesActor {
+impl Handler<UpdateAttendees> for LotteryCache {
     type Result = UpdateAttendeesResponse;
 
     fn handle(&mut self, msg: UpdateAttendees, _ctx: &mut Context<Self>) -> Self::Result {
-        match get_current_event(&msg.organizer, &msg.token)
-            .and_then(|event| load_attendees(&event.id, &msg.token)) {
-            Ok(attendees) => {
+        let load_attendees = get_current_event(&msg.organizer, &msg.token)
+            .and_then(|event| load_attendees(&event.id, &msg.token).map(|attendees| (event, attendees)));
+        match load_attendees {
+            Ok((event, attendees)) => {
                 self.attendees = Some(attendees);
+                self.event = Some(event);
                 UpdateAttendeesResponse::Updated
             }
             Err(e) => {
                 self.attendees = None;
                 match e.downcast::<EventbriteError>() {
-                    Ok(error) => match error{
+                    Ok(error) => match error {
                         EventbriteError::NoEventAvailable => UpdateAttendeesResponse::NoEventAvailable,
                         other_eventbrite_error => UpdateAttendeesResponse::EventbriteError { error: other_eventbrite_error }
                     },
@@ -64,16 +67,30 @@ impl Handler<UpdateAttendees> for AttendeesActor {
 }
 
 impl Message for GetAttendees {
-    type Result = Result<Vec<Profile>, WinnerError>;
+    type Result = Result<Vec<Profile>, LotteryError>;
 }
 
-impl Handler<GetAttendees> for AttendeesActor {
-    type Result = Result<Vec<Profile>, WinnerError>;
+impl Handler<GetAttendees> for LotteryCache {
+    type Result = Result<Vec<Profile>, LotteryError>;
 
     fn handle(&mut self, msg: GetAttendees, _ctx: &mut Context<Self>) -> Self::Result {
         self.attendees.as_ref()
-            .ok_or(WinnerError::NoEventAvailable)
-            .and_then(|ref attendees| draw(msg.nb, attendees).map_err(|error| WinnerError::DrawError { cause: error }))
+            .ok_or(LotteryError::NoEventAvailable)
+            .and_then(|ref attendees| draw(msg.nb, attendees).map_err(|error| LotteryError::DrawError { cause: error }))
             .map(|attendees| attendees.into_iter().map(|r| r.clone()).collect())
+    }
+}
+
+impl Message for GetEvent {
+    type Result = Result<Event, LotteryError>;
+}
+
+impl Handler<GetEvent> for LotteryCache {
+    type Result = Result<Event, LotteryError>;
+
+    fn handle(&mut self, msg: GetEvent, _ctx: &mut Context<Self>) -> Self::Result {
+        self.event.as_ref()
+            .ok_or(LotteryError::NoEventAvailable)
+            .map(|event| event.clone())
     }
 }

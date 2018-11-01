@@ -1,7 +1,7 @@
 use failure::Error;
 
 #[derive(Fail, Debug)]
-pub enum WinnerError {
+pub enum LotteryError {
     #[fail(display = "Invalid parameter")]
     InvalidParameter,
     #[fail(display = "No event available")]

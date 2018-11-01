@@ -19,3 +19,5 @@ pub enum UpdateAttendeesResponse {
 pub struct GetAttendees {
     pub nb: i8
 }
+
+pub struct GetEvent {}

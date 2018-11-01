@@ -6,7 +6,7 @@ use super::EVENTBRITE_BASE_URL;
 
 
 fn events_url(organizer: &str, token: &str) -> String {
-    format!("{base_url}/v3/events/search/?sort_by=date&organizer.id={organizer}&token={token}", base_url = EVENTBRITE_BASE_URL, organizer = organizer, token = token)
+    format!("{base_url}/v3/organizations/{organizer}/events/?status=live&order_by=start_desc&token={token}", base_url = EVENTBRITE_BASE_URL, organizer = organizer, token = token)
 }
 
 fn load_events(organizer: &str, token: &str) -> Result<EventsResponse, Error> {
@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn test_events_url() {
-        assert_eq!(events_url("412451CDS", "5O5ICDI5I4LUFCAZRSTX"), EVENTBRITE_BASE_URL.to_owned() + "/v3/events/search/?sort_by=date&organizer.id=412451CDS&token=5O5ICDI5I4LUFCAZRSTX");
+        assert_eq!(events_url("412451CDS", "5O5ICDI5I4LUFCAZRSTX"), EVENTBRITE_BASE_URL.to_owned() + "/v3/organizations/412451CDS/events/?status=live&order_by=start_desc&token=5O5ICDI5I4LUFCAZRSTX");
     }
 
     #[test]
