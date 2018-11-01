@@ -14,3 +14,52 @@ This implementation is a project to demonstrate the utilisation of several crate
   - [lottery](lottery) : Define the application logic (eventbrite call and draw logic)
   - [bin](bin) : Define the actor model and create application library.
   
+
+## API
+
+### Draw winners 
+`GET` -> `/winners?nb=X`
+
+Results : 
+ - `200` : 
+```json
+[
+  {
+    "first_name": "Francois",
+    "last_name": "Teychene"
+  },
+  {
+    "first_name": "Jean-Luc",
+    "last_name": "Racine"
+  },
+  {
+    "first_name": "Renard",
+    "last_name": "Chenapan"
+  }
+]
+```
+ - `400` : Invalid parameter
+ - `503` : No live events
+ - `500` : Unxepected error
+
+### Record a winner
+`POST` -> `/record`
+Body : 
+```json
+{
+  "first_name": "Francois",
+  "last_name": "Teychene"
+}
+```
+
+Results : 
+ - `200` : 
+ ```json
+{
+    "id": "b3f0182e-b2f4-47a2-9c6f-9ea3a67b588c",
+    "first_name": "Francois",
+    "last_name": "Teychene",
+    "event_id": "52097259305"
+}
+```
+ - `500` : Unexpected error

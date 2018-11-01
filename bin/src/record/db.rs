@@ -35,8 +35,6 @@ impl Handler<CreateWinner> for DbExecutor {
     fn handle(&mut self, msg: CreateWinner, _: &mut Self::Context) -> Self::Result {
         use self::schema::winners::dsl::*;
 
-
-
         let uuid = format!("{}", uuid::Uuid::new_v4());
         let new_user = models::NewWinner {
             id: &uuid,
