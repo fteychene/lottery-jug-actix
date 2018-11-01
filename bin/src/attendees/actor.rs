@@ -88,7 +88,7 @@ impl Message for GetEvent {
 impl Handler<GetEvent> for LotteryCache {
     type Result = Result<Event, LotteryError>;
 
-    fn handle(&mut self, msg: GetEvent, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, _msg: GetEvent, _ctx: &mut Context<Self>) -> Self::Result {
         self.event.as_ref()
             .ok_or(LotteryError::NoEventAvailable)
             .map(|event| event.clone())

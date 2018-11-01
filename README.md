@@ -13,14 +13,18 @@ This implementation is a project to demonstrate the utilisation of several crate
  This project define 2 projects :
   - [lottery](lottery) : Define the application logic (eventbrite call and draw logic)
   - [bin](bin) : Define the actor model and create application library.
-  
+
+
+## Build
+
+`cargo build`
 
 ## API
 
 ### Draw winners 
 `GET` -> `/winners?nb=X`
 
-Results : 
+__Results__ : 
  - `200` : 
 ```json
 [
@@ -44,7 +48,8 @@ Results :
 
 ### Record a winner
 `POST` -> `/record`
-Body : 
+
+_Body_ : 
 ```json
 {
   "first_name": "Francois",
@@ -52,7 +57,7 @@ Body :
 }
 ```
 
-Results : 
+__Results__ : 
  - `200` : 
  ```json
 {

@@ -15,6 +15,8 @@ extern crate log;
 extern crate env_logger;
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
 extern crate uuid;
 extern crate r2d2;
 
@@ -30,7 +32,7 @@ use errors::LotteryError;
 use tokio::prelude::future;
 use tokio::prelude::future::Future;
 
-use actix_web::{App, HttpResponse, FutureResponse, State, AsyncResponder, Query, Path, Json};
+use actix_web::{App, HttpResponse, FutureResponse, State, AsyncResponder, Query, Json};
 use actix_web::{http, error, middleware};
 use actix_web::server::HttpServer;
 use std::env;
@@ -39,6 +41,8 @@ use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 use record::db::{DbExecutor, CreateWinner};
 use actix::SyncArbiter;
+
+embed_migrations!("../migrations");
 
 struct WebState {
     cache: Addr<LotteryCache>,
@@ -97,28 +101,22 @@ fn main() {
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL env var is mandatory");
 
-    info!("Starting lottery ! ");
-    let system = System::new("lottery");
-
+    // Database connection init
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
     let pool = r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
 
-    let db_addr = SyncArbiter::start(3, move || DbExecutor(pool.clone()));
+    // Diesel migration
+    let connection = pool.get().expect("Database connection should not failed");
+    info!("Start Diesel migrations");
+    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).expect("Database migration should not failed");
 
-//    Arbiter::spawn_fn(move || {
-//        db_addr
-//            .send(CreateWinner {
-//                first_name: "Francois".to_owned(),
-//                last_name: "Teychene".to_owned(),
-//            })
-//            .map_err(|err| eprintln!("Error : {}", err))
-//            .map(|res| match res {
-//                Ok(user) => println!("{:?}", user),
-//                Err(err) => eprintln!("Error : {}", err),
-//            })
-//    });
+    // Actor system
+    info!("Starting lottery ! ");
+    let system = System::new("lottery");
+
+    let db_addr = SyncArbiter::start(3, move || DbExecutor(pool.clone()));
 
     let addr = LotteryCache::default().start();
     Arbiter::spawn(cache_update_interval(10, addr.clone(), token.clone(), organizer.clone()));
