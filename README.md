@@ -15,9 +15,38 @@ This implementation is a project to demonstrate the utilisation of several crate
   - [bin](bin) : Define the actor model and create application library.
 
 
-## Build
+## Configuration
 
-`cargo build`
+The application should run with the following env vars :
+ - `ORGANIZER_TOKEN` : Organization id in eventbrite
+ - `EVENTBRITE_TOKEN` : Personal OAuth Token in eventbrite
+ - `RUST_LOG` : Log level (example : `info`)
+ - `DATABASE_URL` : Database SQLite url (example : `test.db`)
+
+## Development
+
+The databases migrations will be executed by the application on startup.  
+If you __want__ to executed the migrations manually (to check your scripts) :
+```bash
+# DATABASE_URL env var is mandatory
+cargo install diesel_cli # to install diesel command
+diesel setup # initialize database if needed
+diesel migration run
+```
+
+### Requirements
+Needed packages for build:
+ - `libssl`
+ - `libsqlite3`
+
+### Docker
+The application can be build in Docker [Dockerfile](Dockerfile) : `docker build -t lottery-jug-actix .`
+
+Run the application : `docker run -e ORGANIZER_TOKEN=91672475603 -e EVENTBRITE_TOKEN=E7N7QDHSXM2V2YB6AC2I -p 8088:8088 lottery-jug-actix`
+
+The `DATABASE_URL` is by default on `/var/data/lottery-jug/lottery.db`.  
+The `RUST_LOG` is be default set to `info`.
+
 
 ## API
 
